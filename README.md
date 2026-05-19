@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.svg" alt="DoD-Guard" width="160" height="160" />
+
 # DoD-Guard
 
 ### Definition of Done as an executable barrier for Claude Code
@@ -7,6 +9,7 @@
 *Stops AI agents (and humans) from declaring tasks **done** while the code is still half-baked.*
 
 [![GitHub release](https://img.shields.io/github/v/release/atoslins/dod-guard?include_prereleases&label=release)](https://github.com/atoslins/dod-guard/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/atoslins/dod-guard/test.yml?branch=main&label=CI)](https://github.com/atoslins/dod-guard/actions)
 [![claude-code](https://img.shields.io/badge/claude--code-%E2%89%A5%202.1-blue)](https://docs.anthropic.com/claude-code)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![python](https://img.shields.io/badge/python-%E2%89%A5%203.10-blue)](https://www.python.org/)
@@ -18,21 +21,9 @@
 
 ---
 
-```text
-═════════════════════════════════════════════════════════════
-DoD-Guard verify  (project: my-api, runner: jest)
-═════════════════════════════════════════════════════════════
-[1/5] Snapshot          branch=feature/refund  HEAD=3f4a2e1  dirty=yes
-[2/5] Stubs             ✘ 2 issue(s):
-  - high  src/refund.ts:14    todo_marker: // TODO: integrate gateway
-  - high  src/refund.ts:18    empty_function: refund() returns null
-[3/5] Tests             24 passed, 0 failed (4.3s)
-[4/5] E2E probe         not_applicable — no live server
-[5/5] Verdict           ═══════════════════════════════════════
-                        VERDICT: FAIL
-                        ═══════════════════════════════════════
-                        Fix the 2 stubs and re-run /dod:verify.
-```
+<p align="center">
+  <img src="assets/demo.svg" alt="DoD-Guard /dod:verify going from FAIL to PASS after fixing two stubs" width="100%" />
+</p>
 
 ---
 

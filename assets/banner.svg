@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="DoD-Guard banner">
+  <title>DoD-Guard — Definition of Done as an executable barrier</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0c1320"/>
+      <stop offset="1" stop-color="#101a2c"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a2540" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+
+  <!-- left: logomark -->
+  <g transform="translate(96 200)">
+    <rect width="240" height="240" rx="36" fill="#0f1c33" stroke="#27365c" stroke-width="2"/>
+    <text x="120" y="138" font-family="ui-monospace, 'JetBrains Mono', monospace"
+          font-size="68" font-weight="700" fill="#e6edf6" text-anchor="middle"
+          letter-spacing="-2">DoD</text>
+    <rect x="36" y="160" width="168" height="10" rx="5" fill="url(#accent)"/>
+    <rect x="80" y="184" width="24" height="4" rx="2" fill="#2dd4bf" opacity="0.7"/>
+    <rect x="136" y="184" width="24" height="4" rx="2" fill="#2dd4bf" opacity="0.7"/>
+  </g>
+
+  <!-- right: wordmark + tagline + chips -->
+  <g transform="translate(400 230)">
+    <text x="0" y="0" font-family="ui-monospace, 'JetBrains Mono', monospace"
+          font-size="92" font-weight="700" fill="#e6edf6" letter-spacing="-3">DoD-Guard</text>
+
+    <text x="0" y="56" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+          font-size="28" fill="#94a3b8">Definition of Done as an executable barrier</text>
+    <text x="0" y="92" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+          font-size="22" fill="#64748b">for Claude Code</text>
+
+    <!-- chips -->
+    <g transform="translate(0 130)" font-family="ui-monospace, monospace" font-size="16" fill="#cbd5e1">
+      <g>
+        <rect x="0" y="0" width="180" height="32" rx="16" fill="#172033" stroke="#27365c"/>
+        <text x="14" y="22">7 adversarial agents</text>
+      </g>
+      <g transform="translate(196 0)">
+        <rect width="160" height="32" rx="16" fill="#172033" stroke="#27365c"/>
+        <text x="14" y="22">11 detectors</text>
+      </g>
+      <g transform="translate(372 0)">
+        <rect width="130" height="32" rx="16" fill="#172033" stroke="#27365c"/>
+        <text x="14" y="22">5 hooks</text>
+      </g>
+      <g transform="translate(518 0)">
+        <rect width="180" height="32" rx="16" fill="#172033" stroke="#27365c"/>
+        <text x="14" y="22">94 test assertions</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- footer: brand bar -->
+  <rect x="0" y="624" width="1280" height="16" fill="url(#accent)"/>
+
+  <!-- subtle ASCII verdict block -->
+  <g transform="translate(96 500)" font-family="ui-monospace, monospace" fill="#7dd3a8">
+    <text x="0" y="0" font-size="14">═════════════════════════════════════════════════════════</text>
+    <text x="0" y="22" font-size="16" font-weight="700">VERDICT: PASS</text>
+    <text x="0" y="42" font-size="14">═════════════════════════════════════════════════════════</text>
+  </g>
+</svg>
