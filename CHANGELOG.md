@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- (nothing yet)
+
+## [0.2.0] - 2026-05-19
+
+Monorepo-aware audits.
+
+### Added
 - `scope.roots` field in `.dod-guard.json` — monorepo scoping. Detectors restrict whole-project scans (`--all`) and git-diff filtering (`--diff`) to the listed subdirectories, leaving sibling sub-projects untouched. Bypass at runtime with `DODG_NO_SCOPE=1`. Default value is `[]`, preserving current behavior.
 - `/dod:init` now detects monorepos: when two or more project-marker files (`go.mod`, `package.json`, `pyproject.toml`, `Cargo.toml`) are found in distinct subdirectories, it prompts to pick which roots to scope.
 - `path_in_scope` helper in `scripts/lib/languages.sh` and `apply_scope` in `scripts/lib/exemptions.py` for shell and Python detectors respectively.
@@ -36,5 +43,6 @@ First public release.
 - GitHub Actions CI workflow running all four test suites + shellcheck + self-audit on every push and PR.
 - Issue templates (bug, feature), PR template with DoD-Guard self-checklist, `CONTRIBUTING.md`.
 
-[Unreleased]: https://github.com/atoslins/dod-guard/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/atoslins/dod-guard/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/atoslins/dod-guard/releases/tag/v0.2.0
 [0.1.0]: https://github.com/atoslins/dod-guard/releases/tag/v0.1.0

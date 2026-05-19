@@ -1,6 +1,6 @@
 {
   "name": "dod-guard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Enforce a Definition of Done as an executable barrier. Combines deterministic detectors, adversarial subagents, lifecycle hooks, and audit commands to prevent premature task-completion claims.",
   "author": {
     "name": "Atos Daniel de Assis Lins",
