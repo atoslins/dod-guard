@@ -99,6 +99,37 @@ echo "== coverage-delta.sh =="
 out_cov="$(bash scripts/coverage-delta.sh 2>/dev/null || true)"
 assert "coverage-delta returns JSON object" "$out_cov" "contains" '"runner"'
 
+echo "== JS-stubs fixture =="
+out_js_stubs="$(bash scripts/detect-stubs.sh tests/fixtures/project-js-stubs --json)"
+n_js_stubs="$(jq_count "$out_js_stubs")"
+assert "JS stubs >= 3" "$n_js_stubs" ">=" 3
+
+out_js_taut="$(python3 scripts/detect-test-tautology.py tests/fixtures/project-js-stubs --json)"
+n_js_taut="$(jq_count "$out_js_taut")"
+assert "JS test-tautology >= 6" "$n_js_taut" ">=" 6
+assert "JS catches expect.assertions(0)" "$out_js_taut" contains "expect.assertions(0)"
+assert "JS catches toMatchSnapshot empty" "$out_js_taut" contains "toMatchSnapshot"
+assert "JS catches toHaveBeenCalled lone" "$out_js_taut" contains "toHaveBeenCalled"
+
+echo "== Go-stubs fixture =="
+out_go_stubs="$(bash scripts/detect-stubs.sh tests/fixtures/project-go-stubs --json)"
+n_go_stubs="$(jq_count "$out_go_stubs")"
+assert "Go stubs >= 4" "$n_go_stubs" ">=" 4
+assert "Go nolint detected" "$out_go_stubs" contains "go_nolint"
+
+out_go_sr="$(python3 scripts/detect-suspicious-returns.py tests/fixtures/project-go-stubs --json)"
+n_go_sr="$(jq_count "$out_go_sr")"
+assert "Go suspicious-returns >= 3" "$n_go_sr" ">=" 3
+assert "Go uninitialized constructor flagged" "$out_go_sr" contains "uninitialized_constructor"
+assert "Go error-swallow flagged" "$out_go_sr" contains "error_swallow"
+
+out_go_taut="$(python3 scripts/detect-test-tautology.py tests/fixtures/project-go-stubs --json)"
+n_go_taut="$(jq_count "$out_go_taut")"
+assert "Go test-tautology >= 4" "$n_go_taut" ">=" 4
+assert "Go test_no_assertion flagged" "$out_go_taut" contains "test_no_assertion"
+assert "Go test_skipped flagged" "$out_go_taut" contains "test_skipped"
+assert "Go test_todo_log flagged" "$out_go_taut" contains "test_todo_log"
+
 echo "== run-verification-pipeline.sh =="
 # Run inside the with-stubs fixture so we see a real FAIL verdict.
 pushd tests/fixtures/project-with-stubs >/dev/null || exit 2

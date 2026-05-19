@@ -1,0 +1,54 @@
+# Definition of Done — {{PROJECT_NAME}} (Node / TypeScript)
+
+This is a Node-stack project. The list below is the contract every change must meet before it can be called done. `/dod:checklist` reads this file and surfaces unmet items.
+
+## Universal criteria
+
+- [ ] All new exported functions have a JSDoc block describing parameters, return shape, and error behavior.
+- [ ] No new `TODO` / `FIXME` / `XXX` / `HACK` markers in the diff.
+- [ ] No function ships with a stub body (`return null`, `return undefined`, `{}`, `throw new Error("not implemented")`, empty arrow).
+- [ ] No `// @ts-ignore` or `// @ts-expect-error` added in the diff (escape hatches). If unavoidable, link an issue in the comment.
+- [ ] No `as any` cast added in the diff.
+- [ ] No empty `catch` blocks and no `.catch(() => {})` swallowing rejections.
+
+## Tests
+
+- [ ] Tests added for every new code path.
+- [ ] Assertions exercise real behavior — no `expect(x).toBeDefined()`, `.not.toBeNull()`, `.toBeTruthy()` as the only assertion.
+- [ ] No `expect(mock).toHaveBeenCalled()` without a matching `.toHaveBeenCalledWith(...)` argument check.
+- [ ] No `expect.assertions(0)`.
+- [ ] No new snapshot tests with trivial output (`{}`, `[]`, single-token strings).
+- [ ] No existing test deleted, skipped, `xit`-ed, or `test.skip`-ed to make the suite pass.
+- [ ] `npm test` / `pnpm test` / `yarn test` passes locally.
+
+## Build & types
+
+- [ ] `tsc --noEmit` (or `npm run typecheck`) is clean for new TypeScript files.
+- [ ] `eslint .` / `npm run lint` has no new warnings or errors.
+- [ ] `package.json` `scripts.test` exists and the runner is committed to the repo (jest, vitest, mocha, or other).
+
+## End-to-end probe
+
+- [ ] For every new HTTP endpoint, CLI command, or user-facing function, paste the exact `curl` / CLI invocation that exercises it, with the observed response or stdout, into the PR description.
+- [ ] For frontend changes, attach a screenshot or recorded interaction.
+
+## Project-specific criteria
+
+<!-- Add Node-specific items below. Examples: -->
+<!-- - [ ] New environment variables documented in .env.example. -->
+<!-- - [ ] OpenAPI/types regenerated and committed. -->
+<!-- - [ ] No new dependency added without a matching note in PR description. -->
+
+- [ ] _(replace this placeholder with a real project-specific criterion)_
+
+## What "verified" means in this project
+
+For each criterion, the check is satisfied only when there is concrete evidence:
+
+- "Tests pass" requires the exact command + exit code, not a vibe check.
+- "End-to-end probe" requires a curl/CLI invocation with the response body, or a Playwright/Cypress test that exercises the same interface a user would.
+- "No `as any`" requires a `grep "as any"` diff with zero matches.
+
+## How to use this file
+
+Run `/dod:checklist` to see which items have been auto-verified in the current session and which still need manual confirmation. The orchestrator will not declare "done" while any blocking item is unresolved.

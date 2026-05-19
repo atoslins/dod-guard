@@ -32,6 +32,7 @@ DEFAULT_PATTERNS=(
     'not_implemented_js::throw new Error\(["'"'"']not implemented::high'
     'placeholder_string::"placeholder"::warn'
     'ellipsis_python_body::^[[:space:]]+\.\.\.[[:space:]]*$::warn'
+    'go_nolint::^[[:space:]]*//[[:space:]]*nolint(:|$)::warn'
 )
 
 OUTPUT_FORMAT="json"

@@ -44,10 +44,13 @@ Exemptions: `@abstractmethod`, `@typing.overload`, Protocol/ABC method declarati
 | `function f() { throw new Error("not implemented"); }` | Marker |
 | `async function f() { return null; }` | Async stub |
 | `class C { method() {} }` | Empty class method |
-| `function f(x: T): T | null { return null; }` | Type allows but body never produces non-null |
+| `function f(x: T): T \| null { return null; }` | Type allows but body never produces non-null |
 | `try { ... } catch { /* */ }` | Silent error swallow |
+| `.catch(() => {})` / `.catch(e => {})` (empty) | Promise rejection swallowed |
+| `// @ts-ignore` / `// @ts-expect-error` (added in diff) | TypeScript escape hatch |
+| `as any` (added in diff) | TypeScript type-system bypass |
 
-Tells in tests: `expect(x).toBeDefined()`, `.not.toBeNull()`, `.toBeTruthy()` on a literal, `expect(f()).toEqual(f())` (tautology), `test.skip`, `xit`.
+Tells in tests: `expect(x).toBeDefined()`, `.not.toBeNull()`, `.toBeTruthy()` on a literal, `expect(f()).toEqual(f())` (tautology), `test.skip`, `xit`, `expect(mock).toHaveBeenCalled()` without a matching `.toHaveBeenCalledWith(...)`, `expect.assertions(0)`, `expect({}).toMatchSnapshot()`, `assert.ok(true)` / `assert(true)` (Node built-in), `.to.be.ok` / `.to.exist` (chai weak assertions).
 
 ## Go — `.go`
 
@@ -59,8 +62,13 @@ Tells in tests: `expect(x).toBeDefined()`, `.not.toBeNull()`, `.toBeTruthy()` on
 | `panic("not implemented")` | Marker |
 | `panic("unimplemented")` | Marker |
 | `func F() { _ = x }` | Acknowledges argument, does nothing |
+| `func NewX(...) *X { return &X{} }` | Constructor with no field set |
+| `_ = err` | Error discarded silently |
+| `_, _ = doSomething()` | All return values, including error, discarded |
+| `if err != nil { return err }` (no wrap) | Forwards error without `fmt.Errorf("...: %w", err)` — loses context |
+| `// nolint:errcheck` (added in the diff) | Linter escape hatch |
 
-Tells in tests: `t.Skip("TODO")`, `// TODO:` above the test func, `if true { return }` to skip a test body.
+Tells in tests: `t.Skip("TODO")`, `t.Log("TODO: ...")`, `// TODO:` above the test func, `if true { return }` to skip a test body, `assert.True(t, true)`, `assert.Equal(t, x, x)`, `assert.NoError(t, nil)`, a `TestX` function whose body has no `t.Errorf`/`t.Fatalf`/`assert.*`/`require.*` call.
 
 ## Rust — `.rs`
 

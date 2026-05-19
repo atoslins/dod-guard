@@ -43,6 +43,7 @@ SKIP_DIRS = {
 
 JS_EXTS = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"}
 PY_EXTS = {".py"}
+GO_EXTS = {".go"}
 
 
 def is_test_path(path: Path) -> bool:
@@ -52,6 +53,8 @@ def is_test_path(path: Path) -> bool:
     if name.endswith("_test.py") or name.endswith(".test.ts") or name.endswith(".test.tsx") \
             or name.endswith(".test.js") or name.endswith(".test.jsx") \
             or name.endswith(".spec.ts") or name.endswith(".spec.js"):
+        return True
+    if name.endswith("_test.go"):
         return True
     parts = set(path.parts)
     return bool(parts & {"tests", "test", "__tests__", "spec"})
@@ -71,7 +74,7 @@ def iter_files(roots: Iterable[Path]) -> Iterable[Path]:
                 continue
             if any(part in SKIP_DIRS for part in p.parts):
                 continue
-            if p.suffix not in JS_EXTS and p.suffix not in PY_EXTS:
+            if p.suffix not in JS_EXTS and p.suffix not in PY_EXTS and p.suffix not in GO_EXTS:
                 continue
             if not is_test_path(p):
                 continue
@@ -86,6 +89,17 @@ JS_TRIVIAL_ASSERTS = [
     (re.compile(r"expect\([^)]*\)\.not\.toBeUndefined\(\)"), "expect(...).not.toBeUndefined()"),
     (re.compile(r"expect\(\s*(true|1|\"[^\"]+\"|'[^']+')\s*\)\.toBeTruthy\(\)"), "expect(<literal>).toBeTruthy()"),
     (re.compile(r"expect\(\s*(true|1|\"[^\"]+\"|'[^']+')\s*\)\.toBe\(\s*\1\s*\)"), "expect(x).toBe(x)"),
+    # `expect(mock).toHaveBeenCalled()` with no `.toHaveBeenCalledWith(...)` next to it.
+    # We catch the lone form; a chained .toHaveBeenCalledWith on the same line is fine.
+    (re.compile(r"expect\([^)]*\)\.toHaveBeenCalled\(\)\s*;?\s*$"), "expect(mock).toHaveBeenCalled() — no args asserted"),
+    # `expect.assertions(0)` disables the assertion-count safety net entirely.
+    (re.compile(r"\bexpect\.assertions\(\s*0\s*\)"), "expect.assertions(0) — disables count check"),
+    # Trivial snapshots: snapshotting an empty literal proves nothing.
+    (re.compile(r"expect\(\s*(?:\{\s*\}|\[\s*\]|''|\"\"|null|undefined)\s*\)\.toMatchSnapshot\("), "expect(<empty>).toMatchSnapshot()"),
+    # Node's built-in assert with literal truthy.
+    (re.compile(r"\bassert(?:\.ok)?\(\s*(?:true|1|\"[^\"]+\"|'[^']+')\s*[,\)]"), "assert(<literal>) — Node assert with literal"),
+    # chai/should: `expect(x).to.be.ok` and `.to.exist` are weak.
+    (re.compile(r"\.to\.(?:be\.ok|exist)\s*;?\s*$"), ".to.be.ok / .to.exist (chai) — weak assertion"),
 ]
 
 JS_TAUTOLOGY_TOEQUAL = re.compile(r"expect\(\s*([^)]+?)\s*\)\.toEqual\(\s*([^)]+?)\s*\)")
@@ -202,6 +216,100 @@ def scan_python(path: Path) -> List[dict]:
     return issues
 
 
+# ─────────────────────────── Go ───────────────────────────
+
+GO_TEST_FUNC_RE = re.compile(
+    r"^func\s+(Test\w+)\s*\(\s*t\s+\*testing\.T\s*\)\s*\{",
+    re.MULTILINE,
+)
+
+# Tautological / decorative Go-test patterns.
+GO_TRIVIAL_PATTERNS = [
+    (re.compile(r"\bassert\.(?:True|Truef)\(\s*t\s*,\s*true\b"),
+     "assert.True(t, true) — tautology"),
+    (re.compile(r"\bassert\.(?:Equal|Equalf)\(\s*t\s*,\s*([^,]+?)\s*,\s*\1\s*[,\)]"),
+     "assert.Equal(t, x, x) — tautology"),
+    (re.compile(r"\bassert\.NotNil\(\s*t\s*,\s*&\w+\{\s*\}\s*\)"),
+     "assert.NotNil(t, &X{}) — comparing against literal non-nil"),
+    (re.compile(r"\b(?:require|assert)\.NoError\(\s*t\s*,\s*nil\s*\)"),
+     "assert.NoError(t, nil) — tautology"),
+]
+
+# `t.Skip(...)` / `t.SkipNow()` (warn).
+GO_SKIP_RE = re.compile(r"\bt\.(?:Skip|Skipf|SkipNow)\s*\(")
+# `t.Log("TODO")` style markers.
+GO_TODO_LOG_RE = re.compile(r"\bt\.(?:Log|Logf)\s*\(\s*[\"`][^\"`]*(?:TODO|FIXME|XXX)[^\"`]*[\"`]")
+
+
+def _go_test_body_has_assertion(body: str) -> bool:
+    """Return True if the body contains anything that resembles a real assertion."""
+    # Conservative: look for any t.* call other than t.Helper/t.Cleanup/t.Skip/t.Log,
+    # or use of common assertion packages.
+    significant = re.compile(
+        r"\bt\.(?:Errorf?|Fatalf?|FailNow|Fail|Helper)\b|"
+        r"\b(?:assert|require)\.\w+\("
+    )
+    return bool(significant.search(body))
+
+
+def scan_go(path: Path) -> List[dict]:
+    try:
+        src = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    issues: List[dict] = []
+    lines = src.splitlines()
+
+    # Line-level patterns (tautologies, skips, t.Log TODO).
+    for lineno, line in enumerate(lines, start=1):
+        for pat, tag in GO_TRIVIAL_PATTERNS:
+            if pat.search(line):
+                issues.append({
+                    "file": str(path), "line": lineno, "type": "test_tautology",
+                    "evidence": line.strip(), "severity": "high",
+                })
+                break
+        if GO_SKIP_RE.search(line):
+            issues.append({
+                "file": str(path), "line": lineno, "type": "test_skipped",
+                "evidence": line.strip(), "severity": "warn",
+            })
+        if GO_TODO_LOG_RE.search(line):
+            issues.append({
+                "file": str(path), "line": lineno, "type": "test_todo_log",
+                "evidence": line.strip(), "severity": "warn",
+            })
+
+    # Body-level: a TestX function whose body has no real assertion.
+    # We extract the body by brace-matching from the opening { after the signature.
+    for m in GO_TEST_FUNC_RE.finditer(src):
+        fname = m.group(1)
+        start = m.end() - 1  # position of the opening brace
+        depth = 0
+        end = start
+        for i, ch in enumerate(src[start:], start=start):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+        body = src[start + 1:end]
+        # Empty body is caught by detect-empty-functions; skip here.
+        if not body.strip():
+            continue
+        if not _go_test_body_has_assertion(body):
+            line = src.count("\n", 0, m.start()) + 1
+            issues.append({
+                "file": str(path), "line": line, "type": "test_no_assertion",
+                "evidence": f"func {fname}(t *testing.T) — body has no assertion-like call",
+                "severity": "high",
+            })
+
+    return issues
+
+
 def diff_files() -> set[Path]:
     try:
         out = subprocess.run(
@@ -223,6 +331,8 @@ def scan(path: Path) -> List[dict]:
         return scan_python(path)
     if path.suffix in JS_EXTS:
         return scan_js(path)
+    if path.suffix in GO_EXTS:
+        return scan_go(path)
     return []
 
 
@@ -237,7 +347,12 @@ def main() -> int:
 
     if args.diff:
         changed = diff_files()
-        files = [p for p in changed if p.exists() and (p.suffix in PY_EXTS or p.suffix in JS_EXTS) and is_test_path(p)]
+        files = [
+            p for p in changed
+            if p.exists()
+            and (p.suffix in PY_EXTS or p.suffix in JS_EXTS or p.suffix in GO_EXTS)
+            and is_test_path(p)
+        ]
     else:
         files = list(iter_files(Path(t) for t in args.targets))
 

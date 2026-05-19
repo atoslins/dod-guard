@@ -1,0 +1,56 @@
+# Definition of Done — {{PROJECT_NAME}} (Go)
+
+This is a Go project. The list below is the contract every change must meet before it can be called done. `/dod:checklist` reads this file and surfaces unmet items.
+
+## Universal criteria
+
+- [ ] All new exported functions, types, and packages have a godoc comment (`// FuncName does X.`) that explains behavior, parameters, and error semantics.
+- [ ] No new `TODO` / `FIXME` / `XXX` / `HACK` markers in the diff.
+- [ ] No function ships with `panic("not implemented")`, `panic("unimplemented")`, or an empty body.
+- [ ] No `// nolint:` markers added in the diff (escape hatches). If a lint must be suppressed, link an issue in the comment.
+- [ ] No constructor `NewX()` left returning `&X{}` / `X{}` with critical fields uninitialized.
+- [ ] No `_ = err` or `_, _ = ...` that silently discards an error path.
+- [ ] No `if err != nil { return err }` that forwards an error without wrapping (`fmt.Errorf("doing X: %w", err)`).
+
+## Tests
+
+- [ ] Tests added for every new code path (table-driven preferred where applicable).
+- [ ] No `t.Skip(...)` added in this diff to bypass a failure.
+- [ ] No `assert.True(t, true)` / `assert.Equal(t, x, x)` / `assert.NoError(t, nil)` tautologies.
+- [ ] Every new `TestX` function makes at least one real assertion (`t.Errorf`, `t.Fatalf`, `assert.*`, `require.*`).
+- [ ] No `t.Log("TODO: ...")` left in a passing test.
+- [ ] `go test ./...` passes locally.
+- [ ] `go test -race ./...` passes for code touching concurrency primitives.
+
+## Build & vet
+
+- [ ] `go build ./...` succeeds.
+- [ ] `go vet ./...` is clean.
+- [ ] `go mod tidy` produces no diff (no unused dependencies, no missing ones).
+- [ ] If `golangci-lint` is configured for the repo, `golangci-lint run` is clean.
+
+## End-to-end probe
+
+- [ ] For every new HTTP handler / CLI command, paste the exact `curl` / CLI invocation that exercises it, with the observed response or stdout, into the PR description.
+- [ ] For library functions, paste a `go run ./cmd/<example>/main.go` or `go test -run TestExample -v ./pkg/...` output.
+
+## Project-specific criteria
+
+<!-- Add Go-specific items below. Examples: -->
+<!-- - [ ] New SQL migrations are reversible and listed in migrations/. -->
+<!-- - [ ] gRPC server and client packages regenerated from .proto. -->
+<!-- - [ ] OpenTelemetry spans added for new request handlers. -->
+
+- [ ] _(replace this placeholder with a real project-specific criterion)_
+
+## What "verified" means in this project
+
+For each criterion, the check is satisfied only when there is concrete evidence:
+
+- "Tests pass" requires the exact command + exit code, not a vibe check.
+- "End-to-end probe" requires a curl / CLI / `go run` invocation with the response or stdout.
+- "No nolint" requires a `grep "// nolint"` diff with zero matches.
+
+## How to use this file
+
+Run `/dod:checklist` to see which items have been auto-verified in the current session and which still need manual confirmation. The orchestrator will not declare "done" while any blocking item is unresolved.

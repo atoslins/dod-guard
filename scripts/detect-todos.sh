@@ -55,6 +55,10 @@ scan_diff_to_tsv() {
             if (content ~ /(TODO|FIXME|XXX|HACK)([[:space:]:]|$)/) {
                 printf "%s\t%d\t%s\n", file, line, content
             }
+            # nolint markers added in the diff are escape-hatches and worth surfacing.
+            else if (content ~ /\/\/[[:space:]]*nolint(:|$)/) {
+                printf "%s\t%d\tNOLINT %s\n", file, line, content
+            }
             line++
         }
     '

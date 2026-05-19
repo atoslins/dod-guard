@@ -183,6 +183,31 @@ GO_FUNC_RE = re.compile(
 GO_RETURN_EMPTY = re.compile(r"return\s+(?:nil|0|\"\"|false)(?:\s*,\s*(?:nil|0|\"\"|false))*\s*$", re.MULTILINE)
 GO_ANY_RETURN = re.compile(r"return\b")
 
+# Constructor: `func NewX(...) *X { return &X{} }` or `func NewX(...) X { return X{} }`
+# where the body's only statement is the return of a zero-valued struct.
+GO_CONSTRUCTOR_RE = re.compile(
+    r"""
+    \bfunc\s+(?P<name>New[A-Z]\w*)\s*\([^)]*\)\s*
+    (?:\*?)(?P<rtype>[A-Z]\w*)\s*\{
+    (?P<body>(?:[^{}]|\{[^{}]*\})*)
+    \}
+    """,
+    re.VERBOSE,
+)
+GO_RETURN_ZERO_STRUCT = re.compile(
+    r"return\s+&?(?P<rtype>[A-Z]\w*)\s*\{\s*\}\s*$",
+    re.MULTILINE,
+)
+
+# Error-swallow patterns. We flag the discarded `err` assignment (`_ = err`,
+# `_, _ = ..., err`) — that erases the error before anything can react to it.
+GO_ERROR_SWALLOW_RES = [
+    (re.compile(r"^\s*_\s*=\s*err\b", re.MULTILINE),
+     "_ = err — error discarded"),
+    (re.compile(r"^\s*_\s*,\s*_\s*=", re.MULTILINE),
+     "_, _ = ... — return values, including error, discarded"),
+]
+
 
 def scan_go(path: Path) -> List[dict]:
     try:
@@ -190,6 +215,8 @@ def scan_go(path: Path) -> List[dict]:
     except OSError:
         return []
     issues = []
+
+    # 1. Action-named functions that always return zero values.
     for m in GO_FUNC_RE.finditer(src):
         name = m.group("name") or ""
         if not looks_like_action(name):
@@ -206,6 +233,41 @@ def scan_go(path: Path) -> List[dict]:
                 "evidence": f"{name}() only returns zero values",
                 "severity": "high",
             })
+
+    # 2. NewX constructors that return a zero-valued struct with no field set.
+    for m in GO_CONSTRUCTOR_RE.finditer(src):
+        name = m.group("name")
+        rtype = m.group("rtype")
+        body = m.group("body").strip()
+        # If every statement in the body is the zero-struct return, flag it.
+        body_lines = [ln.strip() for ln in body.splitlines() if ln.strip()]
+        only_return_zero = (
+            len(body_lines) == 1
+            and GO_RETURN_ZERO_STRUCT.search(body_lines[0]) is not None
+        )
+        if only_return_zero:
+            line = src.count("\n", 0, m.start()) + 1
+            issues.append({
+                "file": str(path),
+                "line": line,
+                "type": "uninitialized_constructor",
+                "evidence": f"{name}() returns &{rtype}{{}} / {rtype}{{}} with no fields set",
+                "severity": "high",
+            })
+
+    # 3. Error-swallow patterns anywhere in the file.
+    for lineno, raw in enumerate(src.splitlines(), start=1):
+        for pat, tag in GO_ERROR_SWALLOW_RES:
+            if pat.search(raw):
+                issues.append({
+                    "file": str(path),
+                    "line": lineno,
+                    "type": "error_swallow",
+                    "evidence": raw.strip(),
+                    "severity": "high",
+                })
+                break
+
     return issues
 
 

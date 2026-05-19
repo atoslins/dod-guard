@@ -20,7 +20,12 @@ Bootstrap DoD-Guard for the current project. Idempotent: re-running updates the 
    - `{{TEST_RUNNER}}` → the matching runner from above (e.g., `pytest`, `jest`, `vitest`, `go-test`, `cargo-test`, `none`)
    - `{{STRICTNESS}}` → `strict` if the user passed `--strict`, `lenient` if `--lenient`, otherwise `normal`
    Write the result to `.dod-guard.json` in the project root. If a file already exists, diff it against the template and apply only the missing keys (preserve user-customized values).
-3. Read `${CLAUDE_PLUGIN_ROOT}/templates/DOD.md.template` and write it to `DOD.md`. If `DOD.md` already exists, **do not overwrite** — instead, print a diff against the template and ask the user whether to merge.
+3. Pick the right `DOD.md` template based on the detected stack:
+   - `node` → `${CLAUDE_PLUGIN_ROOT}/templates/DOD-node.md.template` (includes `// @ts-ignore`, `as any`, `npm test`, `tsc --noEmit` items)
+   - `go` → `${CLAUDE_PLUGIN_ROOT}/templates/DOD-go.md.template` (includes `go vet`, `go test -race`, `// nolint:`, error-wrap items)
+   - any other stack → `${CLAUDE_PLUGIN_ROOT}/templates/DOD.md.template` (generic)
+
+   Substitute `{{PROJECT_NAME}}` with the project's directory name (or the `name` field from `package.json` / `go.mod`), then write to `DOD.md` in the project root. If `DOD.md` already exists, **do not overwrite** — instead, print a diff against the template and ask the user whether to merge.
 4. Create the directory `.dod-guard/` and inside it `reports/` (with a `.gitkeep`).
 5. Append a single line to `.gitignore` if it does not already include `.dod-guard/reports/`:
    ```
