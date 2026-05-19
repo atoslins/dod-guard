@@ -3,36 +3,54 @@
   "schema_version": 1,
   "strictness": "normal",
   "stack": "generic",
-
   "detectors": {
-    "stubs":              {"enabled": true, "severity": "block"},
-    "empty_functions":    {"enabled": true, "severity": "block"},
-    "suspicious_returns": {"enabled": true, "severity": "block"},
-    "test_tautology":     {"enabled": true, "severity": "block"},
-    "not_implemented":    {"enabled": true, "severity": "block"}
+    "stubs": {
+      "enabled": true,
+      "severity": "block"
+    },
+    "empty_functions": {
+      "enabled": true,
+      "severity": "block"
+    },
+    "suspicious_returns": {
+      "enabled": true,
+      "severity": "block"
+    },
+    "test_tautology": {
+      "enabled": true,
+      "severity": "block"
+    },
+    "not_implemented": {
+      "enabled": true,
+      "severity": "block"
+    }
   },
-
-  "test_runners": { "preferred": "none" },
-
+  "test_runners": {
+    "preferred": "none"
+  },
   "verification": {
     "run_tests": false,
     "require_e2e_probe": false,
     "coverage_drop_tolerance": 1.0
   },
-
-  "reporting": { "dir": ".dod-guard/reports", "keep_sessions": 20 },
-
-  "hooks": {
-    "post_edit":  { "severity": "warn" },
-    "pre_commit": {
-      "require_stubs_clean":   true,
-      "require_tests_pass":    false,
-      "require_verify_recent": false,
-      "verify_ttl_seconds":    600
-    },
-    "stop_gate":  { "skip_tests": true }
+  "reporting": {
+    "dir": ".dod-guard/reports",
+    "keep_sessions": 20
   },
-
+  "hooks": {
+    "post_edit": {
+      "severity": "warn"
+    },
+    "pre_commit": {
+      "require_stubs_clean": true,
+      "require_tests_pass": false,
+      "require_verify_recent": false,
+      "verify_ttl_seconds": 600
+    },
+    "stop_gate": {
+      "skip_tests": true
+    }
+  },
   "audit": {
     "parallel": true,
     "subagents": [
@@ -42,7 +60,6 @@
       "claim-validator"
     ]
   },
-
   "exemptions": {
     "_comment": "tests/fixtures/ contains intentional stubs (negative test cases). docs/ and templates/ describe detector patterns textually. The detector scripts themselves match on the patterns they search for.",
     "paths": [
@@ -66,7 +83,8 @@
       "hooks/handlers/post-edit.sh",
       "agents/**",
       "commands/**",
-      "skills/**"
+      "skills/**",
+      ".github/**"
     ]
   }
 }

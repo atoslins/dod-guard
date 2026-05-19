@@ -1,0 +1,71 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test detectors, hooks, agents, integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify tool versions
+        run: |
+          bash --version | head -n 1
+          python3 --version
+          jq --version
+          shellcheck --version | head -n 2
+          git --version
+
+      - name: Validate plugin + marketplace manifest (JSON)
+        run: |
+          jq . .claude-plugin/plugin.json > /dev/null
+          jq . .claude-plugin/marketplace.json > /dev/null
+
+      - name: Python syntax check
+        run: |
+          for f in scripts/*.py scripts/lib/*.py; do
+            python3 -m py_compile "$f"
+          done
+
+      - name: Shellcheck (handlers + scripts + tests)
+        run: |
+          shellcheck -x hooks/handlers/*.sh scripts/*.sh tests/*.sh
+          shellcheck scripts/lib/*.sh
+
+      - name: tests/test-detectors.sh
+        run: bash tests/test-detectors.sh
+
+      - name: tests/test-hooks.sh
+        run: bash tests/test-hooks.sh
+
+      - name: tests/test-agents-syntax.sh
+        run: bash tests/test-agents-syntax.sh
+
+      - name: tests/test-integration.sh
+        run: bash tests/test-integration.sh
+
+      - name: Self-audit (DoD-Guard against itself)
+        run: |
+          out="$(bash scripts/run-verification-pipeline.sh --skip-tests --json)"
+          echo "$out" | jq .
+          verdict="$(echo "$out" | jq -r .verdict)"
+          if [[ "$verdict" != "PASS" ]]; then
+            echo "Self-audit failed: $verdict" >&2
+            exit 1
+          fi
