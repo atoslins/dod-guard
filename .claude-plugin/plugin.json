@@ -1,0 +1,39 @@
+{
+  "name": "dod-guard",
+  "version": "0.1.0",
+  "description": "Enforce a Definition of Done as an executable barrier. Combines deterministic detectors, adversarial subagents, lifecycle hooks, and audit commands to prevent premature task-completion claims.",
+  "author": {
+    "name": "Atos Daniel de Assis Lins",
+    "email": "atos.danielx@gmail.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/atosdaniel/dod-guard",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/atosdaniel/dod-guard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/atosdaniel/dod-guard/issues"
+  },
+  "keywords": [
+    "definition-of-done",
+    "dod",
+    "verification",
+    "quality-gate",
+    "adversarial-review",
+    "stub-detection",
+    "anti-hallucination",
+    "completeness-audit",
+    "hooks",
+    "subagents"
+  ],
+  "compatibility": {
+    "claude-code": ">=2.1.0"
+  },
+  "components": {
+    "commands": "./commands",
+    "agents": "./agents",
+    "skills": "./skills",
+    "hooks": "./hooks/hooks.json"
+  }
+}
