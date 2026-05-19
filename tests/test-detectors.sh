@@ -9,7 +9,7 @@ set -u
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")"/.. && pwd)"
 cd "$ROOT" || exit 2
 
-GREEN=$'\033[32m'; RED=$'\033[31m'; YEL=$'\033[33m'; RESET=$'\033[0m'
+GREEN=$'\033[32m'; RED=$'\033[31m'; RESET=$'\033[0m'
 PASSED=0
 FAILED=0
 
@@ -96,9 +96,9 @@ assert "coverage-delta returns JSON object" "$out_cov" "contains" '"runner"'
 
 echo "== run-verification-pipeline.sh =="
 # Run inside the with-stubs fixture so we see a real FAIL verdict.
-pushd tests/fixtures/project-with-stubs >/dev/null
+pushd tests/fixtures/project-with-stubs >/dev/null || exit 2
 out_pipe="$(bash ../../../scripts/run-verification-pipeline.sh --skip-tests --json 2>/dev/null || true)"
-popd >/dev/null
+popd >/dev/null || exit 2
 assert "pipeline emits verdict" "$out_pipe" "contains" '"verdict"'
 assert "pipeline verdict=FAIL on stubs fixture" "$out_pipe" "contains" '"FAIL"'
 

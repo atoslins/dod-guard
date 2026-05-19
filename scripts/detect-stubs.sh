@@ -14,9 +14,9 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=lib/languages.sh
+# shellcheck source=lib/languages.sh disable=SC1091
 source "$SCRIPT_DIR/lib/languages.sh"
-# shellcheck source=lib/report.sh
+# shellcheck source=lib/report.sh disable=SC1091
 source "$SCRIPT_DIR/lib/report.sh"
 
 # Default stub patterns. Override via .dod-guard.json -> detectors.stubs.patterns.

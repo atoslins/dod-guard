@@ -40,7 +40,8 @@ cfg_get() {
 }
 
 stubs_enabled="$(cfg_get '.detectors.stubs.enabled' true)"
-stubs_severity="$(cfg_get '.detectors.stubs.severity' block)"
+# Reserved for future severity-aware verdicts; deliberately read but unused.
+_stubs_severity="$(cfg_get '.detectors.stubs.severity' block)"
 empty_fn_enabled="$(cfg_get '.detectors.empty_functions.enabled' true)"
 susp_ret_enabled="$(cfg_get '.detectors.suspicious_returns.enabled' true)"
 tautology_enabled="$(cfg_get '.detectors.test_tautology.enabled' true)"
