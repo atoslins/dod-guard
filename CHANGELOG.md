@@ -18,4 +18,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation: ARCHITECTURE, CUSTOMIZATION, EXAMPLES, DEVELOPMENT.
 - Fixture projects and integration tests under `tests/`.
 
-[Unreleased]: https://github.com/atosdaniel/dod-guard/compare/HEAD...HEAD
+[Unreleased]: https://github.com/atoslins/dod-guard/compare/HEAD...HEAD

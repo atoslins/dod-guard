@@ -5,7 +5,7 @@ How to contribute to DoD-Guard.
 ## Local setup
 
 ```bash
-git clone https://github.com/atosdaniel/dod-guard
+git clone https://github.com/atoslins/dod-guard
 cd dod-guard
 
 # Validate the manifest
