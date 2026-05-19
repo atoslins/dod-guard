@@ -84,6 +84,8 @@ collect_targets() {
             while IFS= read -r f; do
                 [[ -z "$f" ]] && continue
                 [[ -f "$f" ]] || continue
+                # Respect scope.roots: silently drop files outside the configured scope.
+                path_in_scope "$f" || continue
                 TARGETS+=("$f")
             done <<< "$list"
             ;;

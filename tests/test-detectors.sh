@@ -130,6 +130,44 @@ assert "Go test_no_assertion flagged" "$out_go_taut" contains "test_no_assertion
 assert "Go test_skipped flagged" "$out_go_taut" contains "test_skipped"
 assert "Go test_todo_log flagged" "$out_go_taut" contains "test_todo_log"
 
+echo "== scope.roots monorepo =="
+# Fixture project-monorepo has app/dirty.py (in scope) and vendor-thing/very_dirty.py
+# (out of scope, behind scope.roots=["app/"]).
+MONO_DIR="tests/fixtures/project-monorepo"
+
+# With scope honored (default): only app/ is scanned.
+out_scope_stubs="$(cd "$MONO_DIR" && bash "$ROOT/scripts/detect-stubs.sh" --all --json)"
+n_scope_stubs="$(jq_count "$out_scope_stubs")"
+assert "scope.roots filters detect-stubs --all to app/" "$n_scope_stubs" "==" 2
+
+# DODG_NO_SCOPE=1 disables scope filtering: both directories visible.
+out_noscope_stubs="$(cd "$MONO_DIR" && DODG_NO_SCOPE=1 bash "$ROOT/scripts/detect-stubs.sh" --all --json)"
+n_noscope_stubs="$(jq_count "$out_noscope_stubs")"
+assert "DODG_NO_SCOPE=1 disables stub scope filtering" "$n_noscope_stubs" ">=" 6
+
+# Python detector honors scope when called with '.'.
+out_scope_ef="$(cd "$MONO_DIR" && python3 "$ROOT/scripts/detect-empty-functions.py" . --json)"
+n_scope_ef="$(jq_count "$out_scope_ef")"
+assert "scope.roots filters detect-empty-functions to app/" "$n_scope_ef" "==" 2
+
+# Without scope: detect-empty-functions sees all 6 trivial bodies.
+out_noscope_ef="$(cd "$MONO_DIR" && DODG_NO_SCOPE=1 python3 "$ROOT/scripts/detect-empty-functions.py" . --json)"
+n_noscope_ef="$(jq_count "$out_noscope_ef")"
+assert "DODG_NO_SCOPE=1 disables Python detector scope" "$n_noscope_ef" ">=" 6
+
+# path_in_scope helper: lets --diff modes silently drop out-of-scope files.
+in_scope_result="$(cd "$MONO_DIR" && \
+    bash -c 'source "$1/scripts/lib/languages.sh"; path_in_scope "app/dirty.py" && echo IN || echo OUT' _ "$ROOT")"
+assert "path_in_scope: in-scope file" "$in_scope_result" "==" "IN"
+
+out_scope_result="$(cd "$MONO_DIR" && \
+    bash -c 'source "$1/scripts/lib/languages.sh"; path_in_scope "vendor-thing/very_dirty.py" && echo IN || echo OUT' _ "$ROOT")"
+assert "path_in_scope: out-of-scope file" "$out_scope_result" "==" "OUT"
+
+no_scope_result="$(cd tests/fixtures/project-clean && \
+    bash -c 'source "$1/scripts/lib/languages.sh"; path_in_scope "anywhere/file.py" && echo IN || echo OUT' _ "$ROOT")"
+assert "path_in_scope: no scope configured = everything in" "$no_scope_result" "==" "IN"
+
 echo "== run-verification-pipeline.sh =="
 # Run inside the with-stubs fixture so we see a real FAIL verdict.
 pushd tests/fixtures/project-with-stubs >/dev/null || exit 2

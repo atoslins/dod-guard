@@ -8,6 +8,11 @@
   "_comment_language": "Detected stack. Used to pick default detector behavior.",
   "stack": "{{STACK}}",
 
+  "_comment_scope": "Monorepo scoping. Empty array (default) = scan the whole project. List subdirectories (relative to this file) to restrict detectors to a subset, e.g. [\"services/api/\", \"packages/web/\"]. Honored by --all and --diff modes; set DODG_NO_SCOPE=1 to bypass at runtime.",
+  "scope": {
+    "roots": []
+  },
+
   "detectors": {
     "stubs": {
       "_comment": "TODO/FIXME/NotImpl/placeholder scan. Set severity=block to fail the build.",

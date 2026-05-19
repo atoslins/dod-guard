@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Iterable, List
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
-from exemptions import load_exemption_globs, is_exempt  # noqa: E402
+from exemptions import apply_scope, is_exempt, load_exemption_globs  # noqa: E402
 
 SKIP_DIRS = {
     "node_modules", ".git", "__pycache__", ".venv", "venv",
@@ -62,7 +62,7 @@ def is_test_path(path: Path) -> bool:
 
 def iter_files(roots: Iterable[Path]) -> Iterable[Path]:
     globs = load_exemption_globs()
-    for root in roots:
+    for root in apply_scope(roots):
         if root.is_file():
             if not is_exempt(root, globs):
                 yield root

@@ -1,0 +1,16 @@
+{
+  "_comment": "Test fixture: monorepo with scope.roots scoping the audit to app/ only. vendor-thing/ is NOT in scope — its stubs should be ignored by detectors when scope is honored.",
+  "schema_version": 1,
+  "strictness": "normal",
+  "stack": "python",
+  "scope": {
+    "roots": ["app/"]
+  },
+  "detectors": {
+    "stubs": { "enabled": true, "severity": "block" },
+    "empty_functions": { "enabled": true, "severity": "block" },
+    "suspicious_returns": { "enabled": true, "severity": "block" },
+    "test_tautology": { "enabled": true, "severity": "block" },
+    "not_implemented": { "enabled": true, "severity": "block" }
+  }
+}

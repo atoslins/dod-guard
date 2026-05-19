@@ -10,6 +10,8 @@ set -uo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/report.sh disable=SC1091
 source "$SCRIPT_DIR/lib/report.sh"
+# shellcheck source=lib/languages.sh disable=SC1091
+source "$SCRIPT_DIR/lib/languages.sh"
 
 OUTPUT_FORMAT="json"
 case "${1:-}" in
@@ -67,6 +69,8 @@ scan_diff_to_tsv() {
 # Use process substitution so report_issue updates stay in the parent shell.
 while IFS=$'\t' read -r file lineno content; do
     [[ -z "$file" ]] && continue
+    # Respect scope.roots: silently drop diff lines from files outside the configured scope.
+    path_in_scope "$file" || continue
     sev=warn
     case "$content" in
         *TODO*|*FIXME*) sev=high ;;

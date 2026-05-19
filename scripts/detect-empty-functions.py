@@ -27,7 +27,7 @@ from typing import Iterable, List
 
 # Make scripts/lib importable when the script is invoked directly.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
-from exemptions import load_exemption_globs, is_exempt  # noqa: E402
+from exemptions import apply_scope, is_exempt, load_exemption_globs  # noqa: E402
 
 PY_TRIVIAL_TOKENS = {"Pass", "Ellipsis", "Constant_None"}
 
@@ -52,7 +52,7 @@ SOURCE_EXTS = {
 
 def iter_files(roots: Iterable[Path]) -> Iterable[Path]:
     globs = load_exemption_globs()
-    for root in roots:
+    for root in apply_scope(roots):
         if root.is_file():
             if root.suffix in SOURCE_EXTS and not is_exempt(root, globs):
                 yield root

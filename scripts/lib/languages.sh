@@ -72,8 +72,23 @@ is_test_file() {
     return 1
 }
 
+# Load scope.roots from .dod-guard.json (whole-project monorepo scoping).
+# Echoes one root per line; empty output means "no scoping configured".
+# DODG_NO_SCOPE=1 in the env disables scope loading (parity with DODG_NO_EXEMPTIONS).
+load_scope_roots() {
+    [[ -n "${DODG_NO_SCOPE:-}" ]] && return 0
+    [[ -f ".dod-guard.json" ]] || return 0
+    command -v jq >/dev/null 2>&1 || return 0
+    jq -r '.scope.roots // [] | .[] | select(. != null and . != "")' .dod-guard.json 2>/dev/null
+}
+
 # Walk source files under a directory, respecting common ignore dirs and the
 # project's .dod-guard.json `exemptions.paths` globs (if jq is available).
+#
+# When called with root='.' AND .dod-guard.json defines `scope.roots`, walk
+# each configured root instead of the entire cwd. Explicit non-'.' roots are
+# honored as-is so callers passing a specific path (a single file, a fixture
+# dir) keep their behavior.
 walk_source_files() {
     local root="${1:-.}"
     local ext_re
@@ -107,18 +122,58 @@ walk_source_files() {
         return 1
     }
 
-    while IFS= read -r f; do
-        is_exempt_path "$f" && continue
-        printf '%s\n' "$f"
-    done < <(find "$root" \
-        \( -path '*/node_modules' -o \
-           -path '*/.git' -o \
-           -path '*/__pycache__' -o \
-           -path '*/.venv' -o \
-           -path '*/venv' -o \
-           -path '*/target' -o \
-           -path '*/dist' -o \
-           -path '*/build' -o \
-           -path '*/.dod-guard' \) -prune -o \
-        -type f -regextype posix-basic -regex ".*$ext_re" -print)
+    # Resolve the actual search roots. Default is the caller-supplied root;
+    # if the caller said "." and scope.roots is configured, expand to those.
+    local search_roots=("$root")
+    if [[ "$root" == "." || "$root" == "./" ]]; then
+        local scope_roots=()
+        while IFS= read -r r; do
+            [[ -n "$r" ]] && scope_roots+=("$r")
+        done < <(load_scope_roots)
+        if [[ ${#scope_roots[@]} -gt 0 ]]; then
+            search_roots=("${scope_roots[@]}")
+        fi
+    fi
+
+    local search_root
+    for search_root in "${search_roots[@]}"; do
+        [[ -e "$search_root" ]] || continue
+        while IFS= read -r f; do
+            is_exempt_path "$f" && continue
+            printf '%s\n' "$f"
+        done < <(find "$search_root" \
+            \( -path '*/node_modules' -o \
+               -path '*/.git' -o \
+               -path '*/__pycache__' -o \
+               -path '*/.venv' -o \
+               -path '*/venv' -o \
+               -path '*/target' -o \
+               -path '*/dist' -o \
+               -path '*/build' -o \
+               -path '*/.dod-guard' \) -prune -o \
+            -type f -regextype posix-basic -regex ".*$ext_re" -print)
+    done
+}
+
+# Print 0 if a given path falls under any configured scope.roots, 1 otherwise.
+# If no scope.roots is configured, every path is considered in-scope (returns 0).
+# Used by --diff modes to filter git-listed paths.
+path_in_scope() {
+    local p="$1" root
+    p="${p#./}"
+    local scope_roots=()
+    while IFS= read -r root; do
+        [[ -n "$root" ]] && scope_roots+=("$root")
+    done < <(load_scope_roots)
+    if [[ ${#scope_roots[@]} -eq 0 ]]; then
+        return 0
+    fi
+    for root in "${scope_roots[@]}"; do
+        root="${root%/}"
+        [[ -z "$root" ]] && continue
+        if [[ "$p" == "$root" || "$p" == "$root/"* ]]; then
+            return 0
+        fi
+    done
+    return 1
 }

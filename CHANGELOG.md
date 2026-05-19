@@ -8,7 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- (nothing yet)
+- `scope.roots` field in `.dod-guard.json` — monorepo scoping. Detectors restrict whole-project scans (`--all`) and git-diff filtering (`--diff`) to the listed subdirectories, leaving sibling sub-projects untouched. Bypass at runtime with `DODG_NO_SCOPE=1`. Default value is `[]`, preserving current behavior.
+- `/dod:init` now detects monorepos: when two or more project-marker files (`go.mod`, `package.json`, `pyproject.toml`, `Cargo.toml`) are found in distinct subdirectories, it prompts to pick which roots to scope.
+- `path_in_scope` helper in `scripts/lib/languages.sh` and `apply_scope` in `scripts/lib/exemptions.py` for shell and Python detectors respectively.
+- Fixture `tests/fixtures/project-monorepo/` and 7 new assertions in `tests/test-detectors.sh` covering scope filtering for both `detect-stubs.sh --all` and `detect-empty-functions.py`.
+
+### Docs
+- `docs/CUSTOMIZATION.md` gains a "Scoping the audit to subdirectories" section and updates the "Monorepo" mode entry to compare the two strategies (nearest-config vs. root-level `scope.roots`).
 
 ## [0.1.0] - 2026-05-19
 

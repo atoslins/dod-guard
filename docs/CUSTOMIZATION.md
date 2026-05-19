@@ -10,6 +10,7 @@ After `/dod:init`, every consumer project has a `.dod-guard.json` in its root. E
 {
   "strictness": "normal",            // strict | normal | lenient
   "stack": "python",                 // auto-detected; pin to override
+  "scope": { "roots": [] },          // monorepo: restrict scan to listed subdirs
   "detectors": { ... },              // per-detector toggles
   "test_runners": { "preferred": "pytest" },
   "verification": {
@@ -62,6 +63,32 @@ Patterns use POSIX extended regex (`grep -E`). Validate yours with:
 
 ```bash
 echo "// @INTERNAL_TODO fix later" | grep -E '@INTERNAL_TODO'
+```
+
+## Scoping the audit to subdirectories (monorepos)
+
+In a monorepo, you usually don't want DoD-Guard auditing the entire tree — many sub-projects are out of your team's reach, vendored, or follow a different DoD. Use `scope.roots` to restrict every whole-project scan to a curated subset:
+
+```json
+"scope": {
+  "roots": ["services/api/", "packages/web/"]
+}
+```
+
+Semantics:
+
+- Paths are relative to the `.dod-guard.json`. Trailing slashes are optional but recommended for clarity.
+- When `scope.roots` is empty or absent, the whole project is scanned (current behavior, no breaking change).
+- `--all` mode (default for `/dod:verify`, `/dod:stubs`, `/dod:audit`) iterates **only** the listed roots.
+- `--diff` mode (used by hooks and `/dod:checklist`) silently drops files outside any root from the git diff before scanning.
+- `exemptions.paths` still applies *inside* each scope root. Think of scope as a positive include list applied first, exemptions as a negative subtract.
+
+`/dod:init` detects monorepos heuristically: if it finds two or more project-marker files (`go.mod`, `package.json`, `pyproject.toml`, `Cargo.toml`) in distinct subdirectories, it prompts you to pick which ones to scope.
+
+Bypass scope at runtime with the env var `DODG_NO_SCOPE=1` — useful when you want a one-off full-project audit without editing the config:
+
+```bash
+DODG_NO_SCOPE=1 bash scripts/run-full-suite.sh
 ```
 
 ## Exempting paths
@@ -132,6 +159,6 @@ Then add `custom_my_rule` to the orchestration list in `run-verification-pipelin
 
 ## Modes
 
-- **Monorepo**: place a `.dod-guard.json` at each package root that needs its own DoD. The plugin uses the nearest config relative to the file being edited.
+- **Monorepo**: two complementary approaches. (a) Place a `.dod-guard.json` at each package root that needs its own DoD — the plugin uses the nearest config when commands are invoked from inside that package. (b) For a single root-level config that audits only a subset of packages, use `scope.roots` (see *Scoping the audit*). (a) gives per-package customization; (b) gives a single source of truth.
 - **CI mode**: set `verification.run_tests = true` and `hooks.pre_commit.verify_ttl_seconds = 0`. Run `/dod:verify` as a step in the pipeline.
 - **Offline mode**: set `verification.require_e2e_probe = false`. Subagents will mark e2e as `not_applicable` rather than fail.
