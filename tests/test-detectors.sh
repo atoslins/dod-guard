@@ -9,6 +9,11 @@ set -u
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")"/.. && pwd)"
 cd "$ROOT" || exit 2
 
+# Bypass project-level exemptions while running detector unit tests; the
+# fixtures live under tests/fixtures/ which the plugin's own .dod-guard.json
+# exempts from real audits.
+export DODG_NO_EXEMPTIONS=1
+
 GREEN=$'\033[32m'; RED=$'\033[31m'; RESET=$'\033[0m'
 PASSED=0
 FAILED=0

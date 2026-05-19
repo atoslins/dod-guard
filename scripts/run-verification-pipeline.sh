@@ -141,7 +141,16 @@ else
     steps_csv="$(IFS=,; echo "${STEP_RESULTS[*]}")"
     reasons_arr="[]"
     if [[ ${#fail_reasons[@]} -gt 0 ]]; then
-        reasons_arr="[\"$(IFS='","'; echo "${fail_reasons[*]}")\"]"
+        # Build the JSON array manually — bash IFS join can't insert a multi-char separator.
+        joined=""
+        for r in "${fail_reasons[@]}"; do
+            if [[ -z "$joined" ]]; then
+                joined="\"$r\""
+            else
+                joined="$joined,\"$r\""
+            fi
+        done
+        reasons_arr="[$joined]"
     fi
     printf '{"verdict":"%s","total_issues":%s,"reasons":%s,"steps":[%s],"tests":%s}\n' \
         "$verdict" "$total_issues" "$reasons_arr" "$steps_csv" "$TESTS_JSON"

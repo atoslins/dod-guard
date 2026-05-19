@@ -8,13 +8,7 @@
   },
   "license": "MIT",
   "homepage": "https://github.com/atosdaniel/dod-guard",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/atosdaniel/dod-guard.git"
-  },
-  "bugs": {
-    "url": "https://github.com/atosdaniel/dod-guard/issues"
-  },
+  "repository": "https://github.com/atosdaniel/dod-guard.git",
   "keywords": [
     "definition-of-done",
     "dod",
@@ -26,14 +20,5 @@
     "completeness-audit",
     "hooks",
     "subagents"
-  ],
-  "compatibility": {
-    "claude-code": ">=2.1.0"
-  },
-  "components": {
-    "commands": "./commands",
-    "agents": "./agents",
-    "skills": "./skills",
-    "hooks": "./hooks/hooks.json"
-  }
+  ]
 }

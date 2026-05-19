@@ -20,10 +20,14 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import os
 import re
 import sys
 from pathlib import Path
 from typing import Iterable, List
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+from exemptions import load_exemption_globs, is_exempt  # noqa: E402
 
 SKIP_DIRS = {
     "node_modules", ".git", "__pycache__", ".venv", "venv",
@@ -57,9 +61,10 @@ def looks_like_action(name: str) -> bool:
 
 
 def iter_files(roots: Iterable[Path]) -> Iterable[Path]:
+    globs = load_exemption_globs()
     for root in roots:
         if root.is_file():
-            if root.suffix in SOURCE_EXTS:
+            if root.suffix in SOURCE_EXTS and not is_exempt(root, globs):
                 yield root
             continue
         if not root.exists():
@@ -69,8 +74,11 @@ def iter_files(roots: Iterable[Path]) -> Iterable[Path]:
                 continue
             if any(part in SKIP_DIRS for part in p.parts):
                 continue
-            if p.suffix in SOURCE_EXTS:
-                yield p
+            if p.suffix not in SOURCE_EXTS:
+                continue
+            if is_exempt(p, globs):
+                continue
+            yield p
 
 
 def _python_returns_empty(body: list[ast.stmt]) -> str | None:

@@ -72,12 +72,45 @@ is_test_file() {
     return 1
 }
 
-# Walk source files under a directory, respecting common ignore dirs.
+# Walk source files under a directory, respecting common ignore dirs and the
+# project's .dod-guard.json `exemptions.paths` globs (if jq is available).
 walk_source_files() {
     local root="${1:-.}"
     local ext_re
     ext_re="$(list_source_extensions)"
-    find "$root" \
+
+    # Cache the exemption globs once per call, then filter the find output.
+    # DODG_NO_EXEMPTIONS=1 in the env disables exemption loading (used by tests).
+    local exempt_globs=()
+    if [[ -z "${DODG_NO_EXEMPTIONS:-}" ]] && [[ -f ".dod-guard.json" ]] && command -v jq >/dev/null 2>&1; then
+        while IFS= read -r g; do
+            [[ -n "$g" ]] && exempt_globs+=("$g")
+        done < <(jq -r '.exemptions.paths // [] | .[]' .dod-guard.json 2>/dev/null)
+    fi
+
+    is_exempt_path() {
+        local p="$1" glob
+        # Strip leading ./ for consistent matching.
+        p="${p#./}"
+        for glob in "${exempt_globs[@]}"; do
+            # bash glob with extglob doesn't quite match .gitignore semantics,
+            # but for the common case "**/dir/**" we can translate to a substring
+            # check. For anything else, fall back to direct globbing.
+            if [[ "$glob" == "**/"*"/**" ]]; then
+                local inner="${glob#**/}"; inner="${inner%/**}"
+                [[ "$p" == *"/$inner/"* || "$p" == "$inner/"* ]] && return 0
+                continue
+            fi
+            # shellcheck disable=SC2053  # we want glob matching on RHS
+            [[ "$p" == $glob ]] && return 0
+        done
+        return 1
+    }
+
+    while IFS= read -r f; do
+        is_exempt_path "$f" && continue
+        printf '%s\n' "$f"
+    done < <(find "$root" \
         \( -path '*/node_modules' -o \
            -path '*/.git' -o \
            -path '*/__pycache__' -o \
@@ -87,5 +120,5 @@ walk_source_files() {
            -path '*/dist' -o \
            -path '*/build' -o \
            -path '*/.dod-guard' \) -prune -o \
-        -type f -regextype posix-basic -regex ".*$ext_re" -print
+        -type f -regextype posix-basic -regex ".*$ext_re" -print)
 }

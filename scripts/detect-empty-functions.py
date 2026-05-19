@@ -19,10 +19,15 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import os
 import re
 import sys
 from pathlib import Path
 from typing import Iterable, List
+
+# Make scripts/lib importable when the script is invoked directly.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+from exemptions import load_exemption_globs, is_exempt  # noqa: E402
 
 PY_TRIVIAL_TOKENS = {"Pass", "Ellipsis", "Constant_None"}
 
@@ -46,9 +51,10 @@ SOURCE_EXTS = {
 
 
 def iter_files(roots: Iterable[Path]) -> Iterable[Path]:
+    globs = load_exemption_globs()
     for root in roots:
         if root.is_file():
-            if root.suffix in SOURCE_EXTS:
+            if root.suffix in SOURCE_EXTS and not is_exempt(root, globs):
                 yield root
             continue
         if not root.exists():
@@ -58,8 +64,11 @@ def iter_files(roots: Iterable[Path]) -> Iterable[Path]:
                 continue
             if any(part in SKIP_DIRS for part in path.parts):
                 continue
-            if path.suffix in SOURCE_EXTS:
-                yield path
+            if path.suffix not in SOURCE_EXTS:
+                continue
+            if is_exempt(path, globs):
+                continue
+            yield path
 
 
 def _python_body_is_trivial(body: list[ast.stmt]) -> tuple[bool, str]:

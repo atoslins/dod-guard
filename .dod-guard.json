@@ -1,0 +1,72 @@
+{
+  "_comment": "DoD-Guard configuration for DoD-Guard itself (the auto-application target). The exemptions block excludes test fixtures (intentional stubs) and docs/templates (which describe the patterns the detectors look for).",
+  "schema_version": 1,
+  "strictness": "normal",
+  "stack": "generic",
+
+  "detectors": {
+    "stubs":              {"enabled": true, "severity": "block"},
+    "empty_functions":    {"enabled": true, "severity": "block"},
+    "suspicious_returns": {"enabled": true, "severity": "block"},
+    "test_tautology":     {"enabled": true, "severity": "block"},
+    "not_implemented":    {"enabled": true, "severity": "block"}
+  },
+
+  "test_runners": { "preferred": "none" },
+
+  "verification": {
+    "run_tests": false,
+    "require_e2e_probe": false,
+    "coverage_drop_tolerance": 1.0
+  },
+
+  "reporting": { "dir": ".dod-guard/reports", "keep_sessions": 20 },
+
+  "hooks": {
+    "post_edit":  { "severity": "warn" },
+    "pre_commit": {
+      "require_stubs_clean":   true,
+      "require_tests_pass":    false,
+      "require_verify_recent": false,
+      "verify_ttl_seconds":    600
+    },
+    "stop_gate":  { "skip_tests": true }
+  },
+
+  "audit": {
+    "parallel": true,
+    "subagents": [
+      "completeness-auditor",
+      "test-quality-auditor",
+      "adversarial-reviewer",
+      "claim-validator"
+    ]
+  },
+
+  "exemptions": {
+    "_comment": "tests/fixtures/ contains intentional stubs (negative test cases). docs/ and templates/ describe detector patterns textually. The detector scripts themselves match on the patterns they search for.",
+    "paths": [
+      "**/tests/fixtures/**",
+      "tests/fixtures/**",
+      "docs/**",
+      "templates/**",
+      "scripts/detect-stubs.sh",
+      "scripts/detect-todos.sh",
+      "scripts/detect-empty-functions.py",
+      "scripts/detect-suspicious-returns.py",
+      "scripts/detect-test-tautology.py",
+      "scripts/check-not-implemented.sh",
+      "scripts/run-verification-pipeline.sh",
+      "tests/test-detectors.sh",
+      "tests/test-hooks.sh",
+      "tests/test-integration.sh",
+      "tests/test-agents-syntax.sh",
+      "hooks/handlers/pre-commit.sh",
+      "hooks/handlers/stop-gate.sh",
+      "hooks/handlers/post-edit.sh",
+      "agents/**",
+      "commands/**",
+      "skills/**"
+    ]
+  }
+}
