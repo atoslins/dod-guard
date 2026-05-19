@@ -31,17 +31,16 @@ assert() {
 }
 
 validate_frontmatter() {
-    local file="$1"
-    python3 - "$file" <<'PYEOF'
+    local file="$1" kind="$2"  # kind = agent|command
+    python3 - "$file" "$kind" <<'PYEOF'
 import sys, re
-path = sys.argv[1]
+path, kind = sys.argv[1], sys.argv[2]
 text = open(path, encoding="utf-8").read()
 m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
 if not m:
     print("ERR: no frontmatter")
     sys.exit(1)
 fm = m.group(1)
-# Crude key:value parser — good enough for plain mappings.
 keys = {}
 for line in fm.splitlines():
     line = line.rstrip()
@@ -50,18 +49,21 @@ for line in fm.splitlines():
     if ":" in line and not line.startswith(" "):
         k, v = line.split(":", 1)
         keys[k.strip()] = v.strip()
-required = ["name", "description"]
+# Agents need `name` + `description`. Commands need `description` only —
+# the command name is derived from the filename in Claude Code.
+required = ["description"] if kind == "command" else ["name", "description"]
 missing = [k for k in required if k not in keys]
 if missing:
     print("ERR: missing keys:", ",".join(missing))
     sys.exit(2)
-print(f"OK name={keys['name']} desc_len={len(keys['description'])}")
+label = keys.get("name") or path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+print(f"OK name={label} desc_len={len(keys['description'])}")
 PYEOF
 }
 
 echo "== agents/*.md frontmatter validation =="
 for f in agents/*.md; do
-    res="$(validate_frontmatter "$f" 2>&1)"
+    res="$(validate_frontmatter "$f" agent 2>&1)"
     rc=$?
     if [[ "$rc" -eq 0 ]]; then
         PASSED=$((PASSED + 1))
@@ -86,7 +88,7 @@ echo ""
 echo "== commands/*.md frontmatter validation =="
 if compgen -G "commands/*.md" > /dev/null; then
     for f in commands/*.md; do
-        res="$(validate_frontmatter "$f" 2>&1)"
+        res="$(validate_frontmatter "$f" command 2>&1)"
         rc=$?
         if [[ "$rc" -eq 0 ]]; then
             PASSED=$((PASSED + 1))
